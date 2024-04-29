@@ -4,6 +4,11 @@ import "fmt"
 
 type Coffee struct{}
 
+// PourInCpu implements beverage.Beverage.
+func (*Coffee) PourInCpu() {
+	panic("unimplemented")
+}
+
 func (c *Coffee) BoilWater() {
 	fmt.Println("Boiling water")
 }
