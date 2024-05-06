@@ -64,3 +64,48 @@ public interface ApplicationContext extends EnvironmentCapable, ListableBeanFact
 - 리소스 로딩 : 필요한 파일등을 로딩하는 메커니즘을 지원한다.(ResourcePatternResolver)
 
 - 국제화 지원 : 다양한 언어 지원을 위해 메시지 소스를 관리한다.(Message Source)
+
+
+### Python의 Dependency Injector
+
+FastAPI에서도 IoC Container가 필요하다. 특히 DDD로 서버를 구축할 때 IoC Container는 필수적이다.
+
+이를 위해서 내가 주로 활용하는 방식은 Dependency Injector이다.
+
+다음은 이를 활용하는 예시이다.
+
+```python
+from fastapi import FastAPI, Depends
+from dependency_injector import containers, providers
+from dependency_injector.wiring import Provide, inject
+
+
+class Service:
+    async def process(self) -> str:
+        return "OK"
+
+
+class Container(containers.DeclarativeContainer):
+
+    service = providers.Factory(Service)
+
+
+app = FastAPI()
+
+
+@app.api_route("/")
+@inject
+async def index(service: Service = Depends(Provide[Container.service])):
+    result = await service.process()
+    return {"result": result}
+
+
+container = Container()
+container.wire(modules=[__name__])
+```
+
+하지만 위의 방식은 내부적으로 ThreadSafe하지 않게 객체를 초기화 하기 때문에 멀티쓰레드 상황에서 이를 사용하게 된다면 Provider를 다음 2가지 중에 하나를 사용해야한다.
+
+- ThreadSafeSingleton : Thread Safe한 Singleton Provider이다.
+- ThreadLocalSingleton : Thread Local Storage를 활용해서 Singleton Provider를 제공하는 방식이다.
+
